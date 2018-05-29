@@ -4,6 +4,7 @@ import las
 import os
 import sys
 import numpy as np
+from decimal import *
 # Code review with Fredrik on 08.05.2018 - pass
 
 
@@ -233,8 +234,7 @@ def save_curve_data(file_contents, metadata, csvfile):
                     # logger.critical('No data found in the file')
                     print('No data found in the file')
                 else:
-                    retrieved_data.round(5)
-                    retrieved_data.to_csv(csvfile, index=False)
+                    retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
                     replace_null_values_in_csv(csvfile, -999.25)
                     file_overview['CSV_file']['name'] = os.path.basename(csvfile)
                     print(os.path.basename(csvfile))
@@ -256,6 +256,7 @@ def save_curve_data(file_contents, metadata, csvfile):
                     curves_metadata = metadata.get(mdkey)
                     curve_names = list(curves_metadata.keys())
                     curves_data = list(map(lambda x: x.split(), file_contents[cds:cde]))
+                    print(type(curves_data))
                     for ci, cn in enumerate(curve_names):
                         retrieved_data[cn] = [i[ci] for i in curves_data]
                     if retrieved_data.empty:
@@ -263,8 +264,7 @@ def save_curve_data(file_contents, metadata, csvfile):
                         print('No data found in the file')
                     else:
                         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
-                        retrieved_data.round(5)
-                        retrieved_data.to_csv(csvfile, index=False)
+                        retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
                         replace_null_values_in_csv(csvfile, -999.25)
                         file_overview['CSV_file']['name'] = os.path.basename(csvfile)
                         #print(os.path.basename(csvfile))
@@ -291,6 +291,9 @@ def save_curve_data(file_contents, metadata, csvfile):
                 curve_names = list((metadata.get(def_section)).keys())
                 section_data = file_contents[ds:de]
                 section_data_split = list(map(lambda x: x.split(dlm), section_data))
+                """ TEST DATA"""
+                parse_curve_data(section_data_split)
+                """ TEST DATA"""
                 retrieved_data = pd.DataFrame()
                 for ci, cn in enumerate(curve_names):
                     cd = [i[ci] for i in section_data_split]
@@ -301,7 +304,6 @@ def save_curve_data(file_contents, metadata, csvfile):
                 file_overview['Files'][''.join([data_section,'_file'])]={}
                 file_overview['Files'][''.join([data_section,'_file'])]['name']=os.path.basename(csvfile)
                 file_overview['Files'][''.join([data_section,'_file'])]['path']=os.path.realpath(csvfile)
-                retrieved_data = retrieved_data.round(5)
                 retrieved_data.to_csv(section_file, index=False)
                 replace_null_values_in_csv(section_file, -999.25)
                 print('Saved section data to: '+section_file)
@@ -367,8 +369,7 @@ def parse_lasfile(lasfile):
             retrieved_data[cn] = pd.Series(log.data[cn])
         save_metadata(metadata, jsonfile)
         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
-        retrieved_data=retrieved_data.round(5)
-        retrieved_data.to_csv(csvfile, index=False)
+        retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
         replace_null_values_in_csv(csvfile, -999.25)
     except Exception as e:
         # logger.error(e)
@@ -379,6 +380,12 @@ def parse_lasfile(lasfile):
         file_overview = save_curve_data(clean_file_contents, metadata, csvfile)
         metadata.update(file_overview)
         save_metadata(metadata, jsonfile)
+
+
+def parse_curve_data(split_file_contents):
+    for row in split_file_contents:
+        for vid,r in enumerate(row):
+            print(type(row[vid]))
 
 
 def replace_null_values_in_csv(csvfile, null_value):
