@@ -386,7 +386,7 @@ def parse_curve_data(split_file_contents):
     for row in split_file_contents:
         for vid,r in enumerate(row):
             print(type(row[vid]))
-
+#pd.read_csv(io.StringIO('\n'.join(list_vals)), delim_whitespace=True)
 
 def replace_null_values_in_csv(csvfile, null_value):
     try:
