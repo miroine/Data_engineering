@@ -233,6 +233,7 @@ def save_curve_data(file_contents, metadata, csvfile):
                     # logger.critical('No data found in the file')
                     print('No data found in the file')
                 else:
+                    retrieved_data.round(5)
                     retrieved_data.to_csv(csvfile, index=False)
                     replace_null_values_in_csv(csvfile, -999.25)
                     file_overview['CSV_file']['name'] = os.path.basename(csvfile)
@@ -262,6 +263,7 @@ def save_curve_data(file_contents, metadata, csvfile):
                         print('No data found in the file')
                     else:
                         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
+                        retrieved_data.round(5)
                         retrieved_data.to_csv(csvfile, index=False)
                         replace_null_values_in_csv(csvfile, -999.25)
                         file_overview['CSV_file']['name'] = os.path.basename(csvfile)
@@ -299,6 +301,7 @@ def save_curve_data(file_contents, metadata, csvfile):
                 file_overview['Files'][''.join([data_section,'_file'])]={}
                 file_overview['Files'][''.join([data_section,'_file'])]['name']=os.path.basename(csvfile)
                 file_overview['Files'][''.join([data_section,'_file'])]['path']=os.path.realpath(csvfile)
+                retrieved_data = retrieved_data.round(5)
                 retrieved_data.to_csv(section_file, index=False)
                 replace_null_values_in_csv(section_file, -999.25)
                 print('Saved section data to: '+section_file)
@@ -364,6 +367,7 @@ def parse_lasfile(lasfile):
             retrieved_data[cn] = pd.Series(log.data[cn])
         save_metadata(metadata, jsonfile)
         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
+        retrieved_data=retrieved_data.round(5)
         retrieved_data.to_csv(csvfile, index=False)
         replace_null_values_in_csv(csvfile, -999.25)
     except Exception as e:
@@ -382,6 +386,7 @@ def replace_null_values_in_csv(csvfile, null_value):
         with open(csvfile, 'r+') as raw_file:
             raw_data = pd.read_csv(raw_file)
             raw_data = raw_data.replace(null_value, np.nan)
+            raw_data.round(5)
             raw_data.to_csv(csvfile, index=False, na_rep='NaN')
     except Exception as e:
         print('Error while replacing '+str(null_value)+' to NaN')
