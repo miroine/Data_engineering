@@ -191,9 +191,9 @@ def read_metadata_sections(file_contents):
 def save_metadata(metadata, jsonfile):
     """Save extracted metadata to a JSON file"""
     all_meta = {}
-    all_meta['Data file'] = {}
+    all_meta['JSON_file'] = {}
     filename = os.path.splitext(os.path.basename(jsonfile))[0]
-    all_meta['Data file']['filename'] = ''.join([filename, '.csv'])
+    all_meta['JSON_file']['filename'] = ''.join([filename, '.JSON'])
     all_meta.update(metadata)
     with open(jsonfile, 'w+') as f:
         json.dump(all_meta, f, indent=2)
@@ -207,8 +207,10 @@ def save_curve_data(file_contents, metadata, csvfile):
     ver = check_las_version(file_contents)
     null_value = -999.25
     sections = list_sections_present(file_contents)
+    file_overview = {}
     if ver == 2:
         retrieved_data = pd.DataFrame()
+        file_overview['CSV_file'] = {}
         # if 'CURVE' in [w.upper() for w in metadata.keys()] and 'ASCII' in [w.upper() for w in sections['Section_name']]:
         section_names_capital = [w.upper() for w in sections['Section_name']]
         curve_data_present = [cn.find('CURVE') for cn in section_names_capital]
@@ -233,6 +235,10 @@ def save_curve_data(file_contents, metadata, csvfile):
                 else:
                     retrieved_data.to_csv(csvfile, index=False)
                     replace_null_values_in_csv(csvfile, -999.25)
+                    file_overview['CSV_file']['name'] = os.path.basename(csvfile)
+                    print(os.path.basename(csvfile))
+                    file_overview['CSV_file']['path'] = os.path.realpath(csvfile)
+                    print(os.path.realpath(csvfile))
                     # logger.info('Saved retrieved data to file ' + csvfile)
                     print('Saved retrieved data to file ' + csvfile)
             except Exception as e:
@@ -265,31 +271,35 @@ def save_curve_data(file_contents, metadata, csvfile):
                 print('Curve information missing from the file')
     if ver == 3:
         dlm = check_las_delimiter(file_contents)
-        with open(csvfile, 'a+') as file:
+        file_overview['Files']={}
+        #with open(csvfile, 'a+') as file:
             # identify sections containing DATA
-            for sid, sn in enumerate(sections['Section_name']):
-                if (sn.upper()).find('DATA') > -1:
-                    # read_section = pd.DataFrame()
-                    ds = sections['Start_index'].iloc[sid]
-                    de = sections['End_index'].iloc[sid]+1
-                    data_section, def_section = sn.split('|')
-                    def_section = def_section.strip()
-                    # curve_names = list((metadata.get(def_section)).keys())
-                    curve_names = list((metadata.get(def_section)).keys())
-                    section_data = file_contents[ds:de]
-                    section_data_split = list(map(lambda x: x.split(dlm), section_data))
-                    retrieved_data = pd.DataFrame()
-                    for ci, cn in enumerate(curve_names):
-                        cd = [i[ci] for i in section_data_split]
-                        retrieved_data[cn] = pd.Series(cd)
-                    # retrieved_data = retrieved_data.replace(-999.25, np.nan)
-                    retrieved_data.to_csv(file, index=False)
-                    section_file = "%s_%s.csv" % (os.path.splitext(csvfile)[0], data_section)
-                    retrieved_data.to_csv(section_file, index=False)
-                    replace_null_values_in_csv(section_file, -999.25)
-                    print('Saved section data to: '+section_file)
-        file.close()
-
+        for sid, sn in enumerate(sections['Section_name']):
+            if (sn.upper()).find('DATA') > -1:
+                # read_section = pd.DataFrame()
+                ds = sections['Start_index'].iloc[sid]
+                de = sections['End_index'].iloc[sid]+1
+                data_section, def_section = sn.split('|')
+                def_section = def_section.strip()
+                # curve_names = list((metadata.get(def_section)).keys())
+                curve_names = list((metadata.get(def_section)).keys())
+                section_data = file_contents[ds:de]
+                section_data_split = list(map(lambda x: x.split(dlm), section_data))
+                retrieved_data = pd.DataFrame()
+                for ci, cn in enumerate(curve_names):
+                    cd = [i[ci] for i in section_data_split]
+                    retrieved_data[cn] = pd.Series(cd)
+                # retrieved_data = retrieved_data.replace(-999.25, np.nan)
+                #retrieved_data.to_csv(file, index=False)
+                section_file = "%s_%s.csv" % (os.path.splitext(csvfile)[0], data_section)
+                file_overview['Files'][''.join([data_section,'_file'])]={}
+                file_overview['Files'][''.join([data_section,'_file'])]['name']=os.path.basename(csvfile)
+                file_overview['Files'][''.join([data_section,'_file'])]['path']=os.path.realpath(csvfile)
+                retrieved_data.to_csv(section_file, index=False)
+                replace_null_values_in_csv(section_file, -999.25)
+                print('Saved section data to: '+section_file)
+                file_overview
+    return file_overview
 
 def parse_lasfile(lasfile):
     # logger.info('Retrieving data from LAS file ' + lasfile)
@@ -358,8 +368,9 @@ def parse_lasfile(lasfile):
         file_contents = read_file_contents(lasfile)
         clean_file_contents = remove_comments_blanklines(file_contents)
         metadata = read_metadata_sections(clean_file_contents)
+        file_overview = save_curve_data(clean_file_contents, metadata, csvfile)
+        metadata.update(file_overview)
         save_metadata(metadata, jsonfile)
-        save_curve_data(clean_file_contents, metadata, csvfile)
 
 
 def replace_null_values_in_csv(csvfile, null_value):
