@@ -264,6 +264,10 @@ def save_curve_data(file_contents, metadata, csvfile):
                         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
                         retrieved_data.to_csv(csvfile, index=False)
                         replace_null_values_in_csv(csvfile, -999.25)
+                        file_overview['CSV_file']['name'] = os.path.basename(csvfile)
+                        #print(os.path.basename(csvfile))
+                        file_overview['CSV_file']['path'] = os.path.realpath(csvfile)
+                        #print(os.path.realpath(csvfile))
                         # logger.info('Saved retrieved data to file ' + csvfile)
                         print('Saved retrieved data to file ' + csvfile)
             except Exception as e:
