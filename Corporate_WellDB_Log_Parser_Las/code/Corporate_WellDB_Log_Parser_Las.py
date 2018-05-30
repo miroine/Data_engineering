@@ -387,75 +387,29 @@ def parse_lasfile(lasfile):
         save_metadata(metadata, jsonfile)
 
 
-# def parse_curve_data(file_contents, dlm, curve_names):
-#     """ if data has to remain in string format and have constant number of dec places"""
-#     df = pd.DataFrame()
-#     for ci, cn in enumerate(curve_names):
-#         temp = pd.Series(dtype='str')
-#         for row in file_contents:
-#             vals = row.split(dlm)
-#             s = vals[ci]
-#             if '.' in s:
-#                 num, dec = s.split('.')
-#                 if len(dec)<5:
-#                     ndec = dec.ljust(5,'0')
-#                     s = '.'.join([num,ndec])
-#             temp = temp.append(pd.Series(s, dtype='str'))
-#         df[cn] = temp
-#     return df
+def format_data_line(dl,null_value,dlm):
+    decomposed = dl.split()
+    line = decomposed
+    print(len(line))
+    for i, d in enumerate(decomposed):
+        d = d.strip()
+        if null_value in d:
+            line[i] = 'Nan'
+    sline = ','.join(line)
+    return sline
 
 def other_save(data,file_name, col_names, null_value, dlm):
     """ when data has to be treated as string regardless of the actual data type"""
     col_line = ','.join(col_names)
-    # fix the data
-    
-    #     fixed_del = list()
-    #     for row in data:
-    #         if dlm!=',':
-    #             dec = row.split(dlm)
-    #             row = ','.join(dec)
-    #         fixed_del=fixed_del.append(row)
-    #
-    #     fixed_null = list()
-    #     for row in fixed_del:
-    #         if null_value in row:
-    #             temp_row = list()
-    #             dec = row.split(',')
-    #             for d in dec:
-    #                 if null_value in d:
-    #                     temp_row=temp_row.append(['NaN'])
-    #                 else:
-    #                     temp_row=temp_row.append([d])
-    #             new_row = ','.join(temp_row)
-    #         else:
-    #             new_row = row
-    #         fixed_null = fixed_null.append(new_row)
-    #
-    #     with open(file_name,'a+') as f:
-    #         f.write(col_line)
-    #         f.write('\n')
-    #         for line in fixed_null:
-    #             f.write(row)
-    #             f.write('\n')
-    #         f.close()
-    # except Exception as e:
-    #     print(e)
-    # with open(file_name,'a+') as file:
-    #     file.write(col_line)
-    #     file.write('\n')
-    #     for row in data:
-    #         if dlm != ',':
-    #             dec = row.split(dlm)
-    #             if null_value in row:
-    #                 nvi = [i for i, s in enumerate(dec) if null_value in s]
-    #                 if len(nvi)>0
-    #                     for nv in nvi:
-    #                         dec[nv] = 'NaN'
-    #             row = ','.join(dec)
-    #             print('ROW:'+row+'\n')
-    #         file.write(row)
-    #         file.write('\n')
-    # file.close()
+    with open(file_name,'w+') as f:
+        f.write(col_line)
+        f.write('\n')
+        for d in data:
+            line = format_data_line(d,null_value,dlm)
+            line = line.strip()
+            f.write(line)
+            f.write('\n')
+        f.close()
 
 def replace_null_values_in_csv(csvfile, null_value):
     try:
