@@ -4,7 +4,7 @@ import las
 import os
 import sys
 import numpy as np
-from decimal import *
+import io
 # Code review with Fredrik on 08.05.2018 - pass
 
 
@@ -234,8 +234,9 @@ def save_curve_data(file_contents, metadata, csvfile):
                     # logger.critical('No data found in the file')
                     print('No data found in the file')
                 else:
-                    retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
-                    replace_null_values_in_csv(csvfile, -999.25)
+                    #retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
+                    other_save(file_contents[cds:cde],csvfile, curve_names,'-999.25','\t')
+                    #replace_null_values_in_csv(csvfile, '-999.25')
                     file_overview['CSV_file']['name'] = os.path.basename(csvfile)
                     print(os.path.basename(csvfile))
                     file_overview['CSV_file']['path'] = os.path.realpath(csvfile)
@@ -264,8 +265,9 @@ def save_curve_data(file_contents, metadata, csvfile):
                         print('No data found in the file')
                     else:
                         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
-                        retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
-                        replace_null_values_in_csv(csvfile, -999.25)
+                        #retrieved_data.to_csv(csvfile, index=False, float_format='%.5f')
+                        other_save(file_contents[cds:cde],csvfile, curve_names,'-999.25','\t')
+                        #replace_null_values_in_csv(csvfile, '-999.25')
                         file_overview['CSV_file']['name'] = os.path.basename(csvfile)
                         #print(os.path.basename(csvfile))
                         file_overview['CSV_file']['path'] = os.path.realpath(csvfile)
@@ -291,9 +293,9 @@ def save_curve_data(file_contents, metadata, csvfile):
                 curve_names = list((metadata.get(def_section)).keys())
                 section_data = file_contents[ds:de]
                 section_data_split = list(map(lambda x: x.split(dlm), section_data))
-                """ TEST DATA"""
-                parse_curve_data(section_data_split)
-                """ TEST DATA"""
+                # """ TEST DATA"""
+                # test = parse_curve_data(section_data, dlm, curve_names)
+                # """ TEST DATA"""
                 retrieved_data = pd.DataFrame()
                 for ci, cn in enumerate(curve_names):
                     cd = [i[ci] for i in section_data_split]
@@ -304,8 +306,10 @@ def save_curve_data(file_contents, metadata, csvfile):
                 file_overview['Files'][''.join([data_section,'_file'])]={}
                 file_overview['Files'][''.join([data_section,'_file'])]['name']=os.path.basename(csvfile)
                 file_overview['Files'][''.join([data_section,'_file'])]['path']=os.path.realpath(csvfile)
-                retrieved_data.to_csv(section_file, index=False)
-                replace_null_values_in_csv(section_file, -999.25)
+                #retrieved_data.to_csv(section_file, index=False)
+                other_save(file_contents[ds:de],section_file, curve_names,'-999.25',dlm)
+                #retrieved_data.to_csv(section_file, index=False)
+                #replace_null_values_in_csv(section_file, '-999.25')
                 print('Saved section data to: '+section_file)
                 file_overview
     return file_overview
@@ -359,6 +363,7 @@ def parse_lasfile(lasfile):
         # ASCII
         curves = log.curves.items
         curve_names = curves.keys()
+        print(type(log.data))
         for cn in curve_names:
             curve = curves.get(cn)
             metadata['ASCII'][cn] = {}
@@ -382,11 +387,75 @@ def parse_lasfile(lasfile):
         save_metadata(metadata, jsonfile)
 
 
-def parse_curve_data(split_file_contents):
-    for row in split_file_contents:
-        for vid,r in enumerate(row):
-            print(type(row[vid]))
-#pd.read_csv(io.StringIO('\n'.join(list_vals)), delim_whitespace=True)
+# def parse_curve_data(file_contents, dlm, curve_names):
+#     """ if data has to remain in string format and have constant number of dec places"""
+#     df = pd.DataFrame()
+#     for ci, cn in enumerate(curve_names):
+#         temp = pd.Series(dtype='str')
+#         for row in file_contents:
+#             vals = row.split(dlm)
+#             s = vals[ci]
+#             if '.' in s:
+#                 num, dec = s.split('.')
+#                 if len(dec)<5:
+#                     ndec = dec.ljust(5,'0')
+#                     s = '.'.join([num,ndec])
+#             temp = temp.append(pd.Series(s, dtype='str'))
+#         df[cn] = temp
+#     return df
+
+def other_save(data,file_name, col_names, null_value, dlm):
+    """ when data has to be treated as string regardless of the actual data type"""
+    col_line = ','.join(col_names)
+    # fix the data
+    
+    #     fixed_del = list()
+    #     for row in data:
+    #         if dlm!=',':
+    #             dec = row.split(dlm)
+    #             row = ','.join(dec)
+    #         fixed_del=fixed_del.append(row)
+    #
+    #     fixed_null = list()
+    #     for row in fixed_del:
+    #         if null_value in row:
+    #             temp_row = list()
+    #             dec = row.split(',')
+    #             for d in dec:
+    #                 if null_value in d:
+    #                     temp_row=temp_row.append(['NaN'])
+    #                 else:
+    #                     temp_row=temp_row.append([d])
+    #             new_row = ','.join(temp_row)
+    #         else:
+    #             new_row = row
+    #         fixed_null = fixed_null.append(new_row)
+    #
+    #     with open(file_name,'a+') as f:
+    #         f.write(col_line)
+    #         f.write('\n')
+    #         for line in fixed_null:
+    #             f.write(row)
+    #             f.write('\n')
+    #         f.close()
+    # except Exception as e:
+    #     print(e)
+    # with open(file_name,'a+') as file:
+    #     file.write(col_line)
+    #     file.write('\n')
+    #     for row in data:
+    #         if dlm != ',':
+    #             dec = row.split(dlm)
+    #             if null_value in row:
+    #                 nvi = [i for i, s in enumerate(dec) if null_value in s]
+    #                 if len(nvi)>0
+    #                     for nv in nvi:
+    #                         dec[nv] = 'NaN'
+    #             row = ','.join(dec)
+    #             print('ROW:'+row+'\n')
+    #         file.write(row)
+    #         file.write('\n')
+    # file.close()
 
 def replace_null_values_in_csv(csvfile, null_value):
     try:
