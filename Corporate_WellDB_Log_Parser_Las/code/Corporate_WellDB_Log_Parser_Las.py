@@ -93,27 +93,35 @@ def check_wrap_setting(file_contents):
     return wrap
 
 def standardize_meta_section_names(metadata):
+    """Change sections names so they follow LAS 2 standard"""
     m_fields = list(metadata.keys())
+    st_metadata = {}
     for mf in m_fields:
-        if 'VERSION' in mf.upper() and 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
-            metadata['VERSION INFORMATION SECTION'] = metadata[mf]
-            del metadata[mf]
-        if 'WELL' in mf.upper() and 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
-            metadata['WELL INFORMATION SECTION'] = metadata[mf]
-            del metadata[mf]
-        if 'CURVE' in mf.upper() and 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
-            metadata['CURVE INFORMATION SECTION'] = metadata[mf]
-            del metadata[mf]
-        if 'PARAMETER' in mf.upper() and 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
-            metadata['PARAMETER INFORMATION SECTION'] = metadata[mf]
-            del metadata[mf]
-        if 'OTHER' in mf.upper() and 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
-            metadata['OTHER'] = metadata[mf]
-            del metadata[mf]
-        if 'REMARKS' in mf.upper() and 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
-            metadata['OTHER'] = metadata[mf]
-            del metadata[mf]
-    return metadata
+        if 'VERSION' in mf.upper():
+            if 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
+                st_metadata['VERSION_INFORMATION_SECTION'] = metadata[mf]
+                del metadata[mf]
+        if 'WELL' in mf.upper():
+            if 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
+                st_metadata['WELL_INFORMATION_SECTION'] = metadata[mf]
+                del metadata[mf]
+        if 'CURVE' in mf.upper():
+            if 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
+                st_metadata['CURVE_INFORMATION_SECTION'] = metadata[mf]
+                del metadata[mf]
+        if 'PARAMETER' in mf.upper():
+            if 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
+                st_metadata['PARAMETER_INFORMATION_SECTION'] = metadata[mf]
+                del metadata[mf]
+        if 'OTHER' in mf.upper():
+            if 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
+                st_metadata['OTHER'] = metadata[mf]
+                del metadata[mf]
+        if 'REMARKS' in mf.upper():
+            if 'DATA' not in mf.upper() and 'DEFINITION' not in mf.upper():
+                st_metadata['OTHER'] = metadata[mf]
+                del metadata[mf]
+    return st_metadata
 
 def check_las_delimiter(file_contents):
     """Return the delimiter used in the las file"""
@@ -167,43 +175,73 @@ def read_metadata_sections(file_contents):
                         metadata[section_label][name] = line_metadata
     if ver == 3:
         logger.info('LAS version 3')
+        #check if the file is actually LAS3, ie there are no ASCII or CURVE sections
+        lasv2_flag = 0
         for si, section_name in enumerate(sections['Section_name']):
-            if (section_name.upper()).find('DATA') == -1:
-                section_label = sections['Section_name'].iloc[si]
-                section_label = section_label.replace('~', '')
-                section_label = section_label.replace(' ', '_')
-                metadata[section_label] = {}
-                mds = sections['Start_index'].iloc[si]
-                mde = sections['End_index'].iloc[si]+1
-                section_metadata = file_contents[mds:mde]
-                for smdl in section_metadata:
-                    line_metadata = retrieve_line_metadata(smdl)
-                    if line_metadata:
-                        name = line_metadata['mnemonic']
-                        if name:
-                            metadata[section_label][name] = line_metadata
-        m_fields = list(metadata.keys())
-        for m in m_fields:
-            if 'CURVE' in m.upper():
-                md = {}
-                logger.error('CURVE is reserved for LAS v2')
-                print('CURVE is reserved for LAS v2')
-                for line in file_contents:
-                    if 'DATA' in line.upper() and 'DEFINITION' in line.upper():
-                        curve_metadata = metadata.get(m)
-                        section_name = line.split('|')[1].strip()
-                        md[section_name] = {}
-                        md[section_name] = curve_metadata
-                        metadata.update(md)
-                        # print(metadata.keys())
-                        break
+            if 'ASCII' in section_name.upper() or section_name.upper()=='A':
+                lasv2_flag = lasv2_flag+1
+            if 'CURVE' in section_name.upper():
+                lasv2_flag = lasv2_flag+1
+        if lasv2_flag >1:
+            print('Wrong LAS format definition, parsing as LASv2')
+            for si, section_name in enumerate(sections['Section_name']):
+                #print(section_name)
+                #print(sections.iloc[si])
+                if not 'ASCII' in section_name.upper():
+                    msi = sections['Start_index'].iloc[si]
+                    mei = sections['End_index'].iloc[si]
+                    section_metadata = file_contents[msi:mei]
+                    # print(section_metadata)
+                    metadata[section_name] = {}
+                    for smdl in section_metadata:
+                        line_metadata = retrieve_line_metadata(smdl)
+                        # print(line_metadata)
+                        if line_metadata:
+                            name = line_metadata['mnemonic']
+                            if name:
+                                metadata[section_name][name] = line_metadata
+            # print(metadata)
+        else:
+            for si, section_name in enumerate(sections['Section_name']):
+                if (section_name.upper()).find('DATA') == -1:
+                    section_label = sections['Section_name'].iloc[si]
+                    section_label = section_label.replace('~', '')
+                    section_label = section_label.replace(' ', '_')
+                    metadata[section_label] = {}
+                    mds = sections['Start_index'].iloc[si]
+                    mde = sections['End_index'].iloc[si]+1
+                    section_metadata = file_contents[mds:mde]
+                    for smdl in section_metadata:
+                        line_metadata = retrieve_line_metadata(smdl)
+                        if line_metadata:
+                            name = line_metadata['mnemonic']
+                            if name:
+                                metadata[section_label][name] = line_metadata
+            m_fields = list(metadata.keys())
 
+            for m in m_fields:
+                if 'CURVE' in m.upper():
+                    md = {}
+                    logger.error('CURVE is reserved for LAS v2')
+                    print('CURVE is reserved for LAS v2')
+                    for line in file_contents:
+                        if 'DATA' in line.upper() and 'DEFINITION' in line.upper():
+                            print('Data and defitnition found')
+                            curve_metadata = metadata.get(m)
+                            section_name = line.split('|')[1].strip()
+                            md[section_name] = {}
+                            md[section_name] = curve_metadata
+                            metadata.update(md)
+                            print(metadata.keys())
+                            break
+    # print('Final metadata')
+    # print(metadata)
     return metadata
 
 
 def save_metadata(metadata, jsonfile):
     """Save extracted metadata to a JSON file"""
-
+    #print(metadata)
     filename = os.path.splitext(os.path.basename(jsonfile))[0]
     #all_meta['JSON_file']['filename'] = ''.join([filename, '.JSON'])
     with open(jsonfile, 'w+') as f:
@@ -310,7 +348,6 @@ def parse_lasfile(lasfile):
         # save_metadata(metadata, jsonfile)
         # retrieved_data = retrieved_data.replace(-999.25, np.nan)
         retrieved_data.to_csv(csvfile, index=False)
-
         metadata['LAS file']=os.path.basename(lasfile)
         if os.path.isfile(csvfile):
             replace_null_values_in_csv(csvfile, -999.25)
@@ -318,17 +355,17 @@ def parse_lasfile(lasfile):
             temp = os.path.realpath(csvfile)
             # print(temp.find('outputDir'))
             metadata['Data files']= temp[temp.find('outputDir')+8:]
-            # print(list(metadata.keys()))
+            print(list(metadata.keys()))
             metadata = standardize_meta_section_names(metadata)
-            # print(list(metadata.keys()))
+            print(list(metadata.keys()))
             save_metadata(metadata, jsonfile)
     except Exception as e:
         logger.error(e)
-        file_contents = read_file_contents(lasfile)
-        clean_file_contents = remove_comments_blanklines(file_contents)
-        #file_contents have to be used so in case ~CURVE used in LASv3 we can retrieve curve names
-        metadata = read_metadata_sections(clean_file_contents)
         try:
+            file_contents = read_file_contents(lasfile)
+            clean_file_contents = remove_comments_blanklines(file_contents)
+            #file_contents have to be used so in case ~CURVE used in LASv3 we can retrieve curve names
+            metadata = read_metadata_sections(clean_file_contents)
             parse_curve_data(metadata, clean_file_contents, csvfile)
             ver = check_las_version(file_contents)
         except Exception as e:
@@ -438,8 +475,10 @@ def parse_las2_file(metadata, file_contents, csvfile,**kwargs):
         metadata['Data files']= temp[2:]
         #metadata['CSV_files']=os.path.realpath(csvfile)
         # print(list(metadata.keys()))
+        print('Metadata keys before standarization')
+        print(metadata.keys())
         metadata = standardize_meta_section_names(metadata)
-        # print(list(metadata.keys()))
+        print(list(metadata.keys()))
         save_metadata(metadata, jsonfile)
     else:
         logger.error('No csv file created')
@@ -519,9 +558,9 @@ def parse_las3_file(metadata,file_contents,csvfile,**kwargs):
             temp = temp.replace('\\','/')
             fd.append(temp[2:])
     metadata['Data files']=fd
-    # print(list(metadata.keys()))
+    print(list(metadata.keys()))
     metadata = standardize_meta_section_names(metadata)
-    # print(list(metadata.keys()))
+    print(list(metadata.keys()))
     save_metadata(metadata, csvfile.replace('csv','json'))
     """some files have versoin declared as 3 but have structure following LAS2 standard"""
     if os.path.isfile(csvfile.replace('csv','json')) and not created_files:
