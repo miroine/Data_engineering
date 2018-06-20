@@ -16,8 +16,9 @@ https://statoilsrm.sharepoint.com/:w:/r/sites/Data-Engineering-Team/Shared%20Doc
 
 ### Prerequisites
 
-The parser was 
+The parser was created using Python 3.6.5 along with modeules/packages listed in the requirements.txt file
 
 
 ## Authors
 
+uwo@equinor.com
