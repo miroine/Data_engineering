@@ -189,7 +189,7 @@ def read_metadata_sections(file_contents):
                 #print(sections.iloc[si])
                 if not 'ASCII' in section_name.upper():
                     msi = sections['Start_index'].iloc[si]
-                    mei = sections['End_index'].iloc[si]
+                    mei = sections['End_index'].iloc[si]+1
                     section_metadata = file_contents[msi:mei]
                     # print(section_metadata)
                     metadata[section_name] = {}
