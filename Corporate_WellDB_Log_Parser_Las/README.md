@@ -21,3 +21,4 @@ The parser was created using Python 3.6.5 along with modeules/packages listed in
 
 ## Authors
 
+uwo@equinor.com
