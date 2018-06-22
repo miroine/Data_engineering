@@ -15,7 +15,7 @@ All the inconsistncies in file formatting that were identified during the develo
 https://statoilsrm.sharepoint.com/:w:/r/sites/Data-Engineering-Team/Shared%20Documents/Data/REP-WellDB-LAS%20v2%20v3%20errors.docx?d=w860df0c2f30745179b6555d7aa9e8c52&csf=1&e=6T7RhK
 
 
-### Prerequisites
+## Prerequisites
 
 The parser was created using Python 3.6.5 along with modeules/packages listed in the requirements.txt file
 
