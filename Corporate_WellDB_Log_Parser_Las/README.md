@@ -5,7 +5,7 @@ The metadata is saved to a *.json file while the curve data is saved to a csv fi
 The parser deals with most of the files following LAS v2 and LAS v3 standard.
 
 Following transformations are performed in the process:
-- '-999.25', which in most cases is used as NULL representation is replaced with 'NaN'
+- NULL representation declared in metadata is replaced with 'NaN'
 - in case of files following LAS v3 standard the curves from each section will be saved in a separate file
 - metadata section names are standardized according to the names listed in LAS version 2 standard
 http://www.cwls.org/wp-content/uploads/2017/02/Las2_Update_Feb2017.pdf
